@@ -7,4 +7,16 @@ export type ImagePlaceholder = {
   imageHint: string;
 };
 
-export const PlaceHolderImages: ImagePlaceholder[] = data.placeholderImages;
+const placeholderImages: ImagePlaceholder[] = data.placeholderImages;
+
+const imageMap = new Map<string, ImagePlaceholder>(
+  placeholderImages.map(image => [image.id, image])
+);
+
+export function getPlaceholderImage(id: string): ImagePlaceholder {
+  const image = imageMap.get(id);
+  if (!image) {
+    throw new Error(`Placeholder image with id "${id}" not found.`);
+  }
+  return image;
+}

@@ -1,3 +1,10 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "subscription-banner",
+      "description": "A person happily riding an e-bike in a modern city with a blurred background.",
+      "imageUrl": "https://images.unsplash.com/photo-1585160390388-25f5faa70acf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxlYmlrZSUyMGNpdHl8ZW58MHx8fHwxNzY4MTgyMTk2fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "ebike city"
+    }
+  ]
 }
