@@ -1,10 +1,31 @@
+'use client';
 import { SubscriptionCard } from '@/components/subscriptions/subscription-card';
 import { subscriptions } from '@/lib/data';
 import { getPlaceholderImage } from '@/lib/placeholder-images';
 import Image from 'next/image';
+import { useUser } from '@/firebase';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+import { Spinner } from '@/components/spinner';
 
 export default function SubscriptionsPage() {
   const bannerImage = getPlaceholderImage('subscription-banner');
+  const { user, isUserLoading } = useUser();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.push('/login');
+    }
+  }, [user, isUserLoading, router]);
+
+  if (isUserLoading) {
+    return <div className="flex justify-center items-center h-screen"><Spinner /></div>;
+  }
+  
+  if (!user) {
+    return null;
+  }
 
   return (
     <div className="container mx-auto py-12">

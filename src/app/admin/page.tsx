@@ -1,10 +1,46 @@
+'use client';
 import { StatsCards } from '@/components/admin/stats-cards';
 import { BikeManagementTable } from '@/components/admin/bike-management-table';
 import DemandAnalytics from '@/components/admin/demand-analytics';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
-import { Bike, BarChart3 } from 'lucide-react';
+import { Bike, BarChart3, Shield, AlertTriangle } from 'lucide-react';
+import { useUser } from '@/firebase';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+import { Spinner } from '@/components/spinner';
+
 
 export default function AdminDashboard() {
+  const { user, isUserLoading } = useUser();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.push('/login');
+    }
+  }, [user, isUserLoading, router]);
+
+  if (isUserLoading) {
+    return <div className="flex justify-center items-center h-screen"><Spinner /></div>;
+  }
+  
+  if (!user) {
+    return null;
+  }
+  
+  // TODO: Add proper admin role check
+  const isAdmin = true;
+
+  if (!isAdmin) {
+    return (
+      <div className="container mx-auto py-8 text-center">
+        <AlertTriangle className="mx-auto h-12 w-12 text-destructive" />
+        <h1 className="mt-4 text-2xl font-bold">Access Denied</h1>
+        <p className="mt-2 text-muted-foreground">You do not have permission to view this page.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto py-8 space-y-8">
       <div className="space-y-1">

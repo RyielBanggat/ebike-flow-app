@@ -2,15 +2,24 @@
 
 import { APIProvider, Map, AdvancedMarker, Pin } from '@vis.gl/react-google-maps';
 import { Card } from './ui/card';
+import { Skeleton } from './ui/skeleton';
 
 type Station = {
-  id: number;
+  id: string;
   name: string;
   location: { lat: number; lng: number };
 };
 
-export function MapView({ stations }: { stations: Station[] }) {
+export function MapView({ stations, isLoading }: { stations: Station[], isLoading: boolean }) {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+
+  if (isLoading) {
+    return (
+        <Card className="h-[600px] w-full rounded-lg border shadow-md">
+            <Skeleton className="h-full w-full" />
+        </Card>
+    );
+  }
 
   if (!apiKey) {
     return (
