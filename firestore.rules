@@ -129,11 +129,9 @@ service cloud.firestore {
      * @principle Restricts access to a user's own data tree and prevents user enumeration.
      */
     match /users/{userId} {
-      allow get: if isOwner(userId) || isAdmin();
+      allow read, write: if isOwner(userId);
+      allow get: if isAdmin();
       allow list: if false;
-      allow create: if isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
-      allow delete: if isExistingOwner(userId);
     }
 
     /**
@@ -146,7 +144,7 @@ service cloud.firestore {
      */
     match /ebikes/{ebikeId} {
       allow get, list: if true;
-      allow create, update, delete: if isAdmin();
+      allow write: if isAdmin();
     }
 
     /**
@@ -159,7 +157,7 @@ service cloud.firestore {
      */
     match /stations/{stationId} {
       allow get, list: if true;
-      allow create, update, delete: if isAdmin();
+      allow write: if isAdmin();
     }
 
     /**
@@ -172,7 +170,7 @@ service cloud.firestore {
      */
     match /parking_bays/{parkingBayId} {
       allow get, list: if true;
-      allow create, update, delete: if isAdmin();
+      allow write: if isAdmin();
     }
 
     /**
@@ -185,7 +183,7 @@ service cloud.firestore {
      */
     match /rentals/{rentalId} {
       allow get: if (isExistingDoc() && isOwner(resource.data.userId)) || isAdmin();
-      allow list: if false;
+      allow list: if isAdmin();
       allow create: if isCreatingOwnDocument('userId');
       allow update: if (isExistingDoc() && isOwner(resource.data.userId) && isOwnerFieldImmutable('userId')) || isAdmin();
       allow delete: if isAdmin();
@@ -216,8 +214,8 @@ service cloud.firestore {
      * @principle Enforces strict Role-Based Access Control for sensitive system data.
      */
     match /system_logs/{logId} {
-      allow get, list: if isAdmin();
-      allow create, update, delete: if false;
+      allow read: if isAdmin();
+      allow write: if false;
     }
 
     /**
@@ -229,9 +227,9 @@ service cloud.firestore {
      * @principle Secures a critical collection by restricting all access to existing administrators.
      */
     match /roles_admin/{userId} {
-      allow get: if isAdmin();
-      allow list: if false;
-      allow create, update, delete: if isAdmin();
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin();
+      allow write: if isAdmin();
     }
   }
 }
