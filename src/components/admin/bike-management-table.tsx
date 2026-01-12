@@ -17,7 +17,7 @@ import {
     DropdownMenuLabel,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { useCollection, useFirestore } from "@/firebase";
+import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import { collection, doc } from 'firebase/firestore';
 import type { Bike } from "@/lib/data";
 import { updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
@@ -31,7 +31,7 @@ const statusStyles = {
 
 export function BikeManagementTable() {
     const firestore = useFirestore();
-    const bikesCollection = collection(firestore, 'ebikes');
+    const bikesCollection = useMemoFirebase(() => collection(firestore, 'ebikes'), [firestore]);
     const { data: bikes, isLoading } = useCollection<Bike>(bikesCollection);
 
     const handleLockToggle = (bike: Bike) => {

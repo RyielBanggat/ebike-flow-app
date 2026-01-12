@@ -1,7 +1,7 @@
 'use client';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Bike, PlayCircle, Lock, CheckCircle } from "lucide-react";
-import { useCollection, useFirestore } from "@/firebase";
+import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import { collection } from 'firebase/firestore';
 import type { Bike as BikeType } from "@/lib/data";
 import { Skeleton } from "../ui/skeleton";
@@ -9,7 +9,7 @@ import { Skeleton } from "../ui/skeleton";
 
 export function StatsCards() {
     const firestore = useFirestore();
-    const bikesCollection = collection(firestore, 'ebikes');
+    const bikesCollection = useMemoFirebase(() => collection(firestore, 'ebikes'), [firestore]);
     const { data: bikes, isLoading } = useCollection<BikeType>(bikesCollection);
 
     const totalBikes = bikes?.length ?? 0;

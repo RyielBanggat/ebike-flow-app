@@ -8,10 +8,11 @@ import { useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { Spinner } from '@/components/spinner';
-
+import { useAdmin } from '@/hooks/use-admin';
 
 export default function AdminDashboard() {
   const { user, isUserLoading } = useUser();
+  const { isAdmin, isAdminLoading } = useAdmin();
   const router = useRouter();
 
   useEffect(() => {
@@ -20,7 +21,7 @@ export default function AdminDashboard() {
     }
   }, [user, isUserLoading, router]);
 
-  if (isUserLoading) {
+  if (isUserLoading || isAdminLoading) {
     return <div className="flex justify-center items-center h-screen"><Spinner /></div>;
   }
   
@@ -28,9 +29,6 @@ export default function AdminDashboard() {
     return null;
   }
   
-  // TODO: Add proper admin role check
-  const isAdmin = true;
-
   if (!isAdmin) {
     return (
       <div className="container mx-auto py-8 text-center">

@@ -225,11 +225,12 @@ service cloud.firestore {
      *              collection grants a user admin privileges across the app.
      * @path /roles_admin/{userId}
      * @allow (create) An existing admin grants admin rights to another user.
-     * @deny (get) A non-admin user attempts to read this collection to discover who the admins are.
+     * @deny (list) A non-admin user attempts to read this collection to discover who the admins are.
      * @principle Secures a critical collection by restricting all access to existing administrators.
      */
     match /roles_admin/{userId} {
-      allow get, list: if false;
+      allow get: if isAdmin();
+      allow list: if false;
       allow create, update, delete: if isAdmin();
     }
   }
