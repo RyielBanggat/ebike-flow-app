@@ -1,6 +1,7 @@
 'use client';
 
-import { useFormState, useFormStatus } from 'react-dom';
+import { useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
 import { getDemandAnalysis } from '@/app/actions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -23,7 +24,7 @@ function SubmitButton() {
 }
 
 export default function DemandAnalytics() {
-  const [state, formAction] = useFormState(getDemandAnalysis, initialState);
+  const [state, formAction] = useActionState(getDemandAnalysis, initialState);
   const { pending } = useFormStatus();
 
   return (
