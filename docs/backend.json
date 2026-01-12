@@ -1,0 +1,406 @@
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the eBikeFlow system.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the user entity."
+        },
+        "email": {
+          "type": "string",
+          "description": "User's email address.",
+          "format": "email"
+        },
+        "phoneNumber": {
+          "type": "string",
+          "description": "User's phone number."
+        },
+        "firstName": {
+          "type": "string",
+          "description": "User's first name."
+        },
+        "lastName": {
+          "type": "string",
+          "description": "User's last name."
+        },
+        "loyaltyPoints": {
+          "type": "number",
+          "description": "User's accumulated loyalty points."
+        }
+      },
+      "required": [
+        "id",
+        "email",
+        "firstName",
+        "lastName"
+      ]
+    },
+    "EBike": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "EBike",
+      "type": "object",
+      "description": "Represents an e-bike available for rent.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the e-bike entity."
+        },
+        "stationId": {
+          "type": "string",
+          "description": "Reference to Station. (Relationship: Station 1:N EBike)"
+        },
+        "status": {
+          "type": "string",
+          "description": "Current status of the e-bike (available, rented, locked)."
+        },
+        "lockStatus": {
+          "type": "boolean",
+          "description": "Lock status of the e-bike. True means locked and false means unlocked."
+        },
+        "qrCode": {
+          "type": "string",
+          "description": "QR code associated with the e-bike."
+        }
+      },
+      "required": [
+        "id",
+        "stationId",
+        "status",
+        "lockStatus",
+        "qrCode"
+      ]
+    },
+    "Station": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Station",
+      "type": "object",
+      "description": "Represents an e-bike station location.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the station entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the station."
+        },
+        "latitude": {
+          "type": "number",
+          "description": "Latitude coordinate of the station."
+        },
+        "longitude": {
+          "type": "number",
+          "description": "Longitude coordinate of the station."
+        },
+        "parkingBayIds": {
+          "type": "array",
+          "description": "References to ParkingBays. (Relationship: Station 1:N ParkingBay)",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "latitude",
+        "longitude"
+      ]
+    },
+    "ParkingBay": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ParkingBay",
+      "type": "object",
+      "description": "Represents a parking bay location.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the parking bay entity."
+        },
+        "stationId": {
+          "type": "string",
+          "description": "Reference to Station. (Relationship: Station 1:N ParkingBay)"
+        },
+        "latitude": {
+          "type": "number",
+          "description": "Latitude coordinate of the parking bay."
+        },
+        "longitude": {
+          "type": "number",
+          "description": "Longitude coordinate of the parking bay."
+        }
+      },
+      "required": [
+        "id",
+        "stationId",
+        "latitude",
+        "longitude"
+      ]
+    },
+    "Rental": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Rental",
+      "type": "object",
+      "description": "Represents a rental session.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the rental entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N Rental)"
+        },
+        "ebikeId": {
+          "type": "string",
+          "description": "Reference to EBike. (Relationship: EBike 1:N Rental)"
+        },
+        "startTime": {
+          "type": "string",
+          "description": "Start time of the rental session.",
+          "format": "date-time"
+        },
+        "endTime": {
+          "type": "string",
+          "description": "End time of the rental session. Null if the rental is active.",
+          "format": "date-time"
+        },
+        "totalCost": {
+          "type": "number",
+          "description": "Total cost of the rental session."
+        },
+        "status": {
+          "type": "string",
+          "description": "Status of rental (active, completed, overdue)."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "ebikeId",
+        "startTime",
+        "totalCost",
+        "status"
+      ]
+    },
+    "Payment": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Payment",
+      "type": "object",
+      "description": "Represents a payment transaction.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the payment entity."
+        },
+        "rentalId": {
+          "type": "string",
+          "description": "Reference to Rental. (Relationship: Rental 1:N Payment)"
+        },
+        "paymentTime": {
+          "type": "string",
+          "description": "Time of the payment.",
+          "format": "date-time"
+        },
+        "amount": {
+          "type": "number",
+          "description": "Amount paid."
+        },
+        "paymentMethod": {
+          "type": "string",
+          "description": "Method of payment used (e.g., credit card, cash)."
+        },
+        "transactionId": {
+          "type": "string",
+          "description": "Transaction ID from the payment gateway."
+        }
+      },
+      "required": [
+        "id",
+        "rentalId",
+        "paymentTime",
+        "amount",
+        "paymentMethod"
+      ]
+    },
+    "SystemLog": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "SystemLog",
+      "type": "object",
+      "description": "Represents a system log entry.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the log entry."
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "Timestamp of the log event.",
+          "format": "date-time"
+        },
+        "level": {
+          "type": "string",
+          "description": "Log level (e.g., INFO, WARNING, ERROR)."
+        },
+        "message": {
+          "type": "string",
+          "description": "Log message."
+        },
+        "source": {
+          "type": "string",
+          "description": "Source of the log event (e.g., component, function)."
+        }
+      },
+      "required": [
+        "id",
+        "timestamp",
+        "level",
+        "message",
+        "source"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user profiles. Uses path-based ownership for private data.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/ebikes/{ebikeId}",
+        "definition": {
+          "entityName": "EBike",
+          "schema": {
+            "$ref": "#/backend/entities/EBike"
+          },
+          "description": "Stores e-bike information. No specific authorization concerns.",
+          "params": [
+            {
+              "name": "ebikeId",
+              "description": "The unique identifier for the e-bike."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/stations/{stationId}",
+        "definition": {
+          "entityName": "Station",
+          "schema": {
+            "$ref": "#/backend/entities/Station"
+          },
+          "description": "Stores e-bike station information. No specific authorization concerns.",
+          "params": [
+            {
+              "name": "stationId",
+              "description": "The unique identifier for the station."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/parking_bays/{parkingBayId}",
+        "definition": {
+          "entityName": "ParkingBay",
+          "schema": {
+            "$ref": "#/backend/entities/ParkingBay"
+          },
+          "description": "Stores parking bay information. No specific authorization concerns.",
+          "params": [
+            {
+              "name": "parkingBayId",
+              "description": "The unique identifier for the parking bay."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/rentals/{rentalId}",
+        "definition": {
+          "entityName": "Rental",
+          "schema": {
+            "$ref": "#/backend/entities/Rental"
+          },
+          "description": "Stores rental session information. Security rules will check ownership based on the userId field and status.",
+          "params": [
+            {
+              "name": "rentalId",
+              "description": "The unique identifier for the rental."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/payments/{paymentId}",
+        "definition": {
+          "entityName": "Payment",
+          "schema": {
+            "$ref": "#/backend/entities/Payment"
+          },
+          "description": "Stores payment transaction information related to rentals. Security rules to ensure only authorized users or admins can view payment records.",
+          "params": [
+            {
+              "name": "paymentId",
+              "description": "The unique identifier for the payment."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/system_logs/{logId}",
+        "definition": {
+          "entityName": "SystemLog",
+          "schema": {
+            "$ref": "#/backend/entities/SystemLog"
+          },
+          "description": "Stores system log entries. Access to these logs should be restricted to admins only.",
+          "params": [
+            {
+              "name": "logId",
+              "description": "The unique identifier for the log entry."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/roles_admin/{userId}",
+        "definition": {
+          "entityName": "AdminRole",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Documents in this collection signify that a user is an administrator.  Existence over content for global role management.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to ensure security, scalability, and ease of debugging, following the principles of Authorization Independence, Clarity of Intent, and DBAC. Authorization Independence is achieved through denormalization, specifically by embedding relevant user roles or permissions within documents when necessary. This eliminates the need for costly and complex `get()` operations in security rules. Structural Segregation is used to keep documents with similar security needs in the same collections. Access Modeling uses hierarchical paths for user-owned data and membership maps for collaborative data. This approach supports robust `list` operations and maintains data integrity. All collections are designed to have homogeneous security postures, and naming conventions are used to enhance clarity and predictability."
+  }
+}

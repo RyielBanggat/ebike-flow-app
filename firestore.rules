@@ -1,0 +1,236 @@
+/**
+ * @fileoverview Firestore Security Rules for the eBikeFlow Application
+ * @version 2
+ *
+ * @description
+ * This ruleset is designed for the Prototyping Mode of the eBikeFlow application.
+ * It prioritizes strong authorization while maintaining flexibility in data schemas to
+ * support rapid development and iteration.
+ *
+ * @philosophy
+ * Core Philosophy:
+ * This ruleset implements a hybrid security model combining User Ownership and
+ * Role-Based Access Control (RBAC). Regular users have strict control over their
+ * own data (profiles, rentals, payments), while a global 'admin' role grants
+ * elevated privileges for system management and data oversight.
+ *
+ * Data Structure:
+ * - /users/{userId}: Private user-specific data, secured by path ownership.
+ * - /rentals/{rentalId}, /payments/{paymentId}: User-owned documents where
+ *   ownership is determined by a `userId` field within the document itself.
+ * - /ebikes, /stations, /parking_bays: Publicly readable collections that
+ *   represent system assets. Writes are restricted to administrators.
+ * - /system_logs: A private collection for system diagnostics, accessible only
+ *   to administrators.
+ * - /roles_admin: A dedicated collection to manage admin roles, ensuring a
+ *   clear separation of concerns.
+ *
+ * Key Security Decisions:
+ * - Admin Access: An `isAdmin()` function, which checks for a user's document
+ *   in the `/roles_admin` collection, is used globally to grant privileged access.
+ * - No User Listing: To protect user privacy, listing the entire `/users`
+ *   collection is explicitly disallowed.
+ * - Default Secure: Collections without a clear ownership model (like `ebikes`
+ *   and `stations`) default to a secure posture of public-read and admin-only write.
+ * - Write Integrity: All write operations (`create`, `update`, `delete`) are
+ *   strictly controlled. There are no open writes. Updates to critical relational
+ *   fields (like a `userId` on a rental) are prevented to maintain data integrity.
+ *
+ * Denormalization for Authorization:
+ * The ruleset relies on denormalized ownership fields (e.g., `userId` on a
+ * `/rentals` document) to perform fast and cost-effective authorization checks without
+ * needing extra `get()` calls. An exception is made for `/payments`, which requires
+ * a `get()` on the parent `/rentals` document to verify ownership, as this is
+ * essential for securing the relationship.
+ *
+ * Structural Segregation:
+ * The use of a separate `/roles_admin` collection is a deliberate choice. It isolates
+ * the critical function of role management from user profile data, making the
+ * rules for both collections simpler and more secure.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // -------------------------------------------------------------------------
+    // Helper Functions
+    // -------------------------------------------------------------------------
+
+    /**
+     * @description Checks if the user is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * @description Checks if the authenticated user's UID matches the provided userId.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * @description Checks if a document currently exists in Firestore.
+     */
+    function isExistingDoc() {
+      return resource != null;
+    }
+
+    /**
+     * @description A convenience function for update/delete, ensuring the user is the
+     *              owner of an existing document.
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && isExistingDoc();
+    }
+
+    /**
+     * @description Checks if the requesting user has an admin role by checking for
+     *              the existence of a corresponding document in the roles_admin collection.
+     */
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+    }
+    
+    /**
+     * @description On create, validates that an ownership field in the new data
+     *              matches the authenticated user's UID.
+     */
+    function isCreatingOwnDocument(ownerField) {
+      return isSignedIn() && request.resource.data[ownerField] == request.auth.uid;
+    }
+
+    /**
+     * @description On update, ensures an ownership field remains unchanged.
+     */
+    function isOwnerFieldImmutable(ownerField) {
+      return request.resource.data[ownerField] == resource.data[ownerField];
+    }
+
+    /**
+     * @description Checks if the current user owns the rental associated with a given rentalId.
+     *              Requires a 'get' call to the rentals collection.
+     */
+    function isRentalOwner(rentalId) {
+      return get(/databases/$(database)/documents/rentals/$(rentalId)).data.userId == request.auth.uid;
+    }
+
+    // -------------------------------------------------------------------------
+    // Collection Rules
+    // -------------------------------------------------------------------------
+
+    /**
+     * @description Manages user profiles. Users can create, read, and update their own
+     *              profile. Admins have read-only access for support purposes.
+     * @path /users/{userId}
+     * @allow (get) A user requests their own document: `/users/user_abc`. (auth.uid: 'user_abc')
+     * @deny (list) Any user attempts to list all documents in the collection.
+     * @principle Restricts access to a user's own data tree and prevents user enumeration.
+     */
+    match /users/{userId} {
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if false;
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Stores information about e-bikes. This data is public for all users to
+     *              view, but can only be managed by administrators.
+     * @path /ebikes/{ebikeId}
+     * @allow (list) Any user, signed in or not, can list all available e-bikes.
+     * @deny (create) A regular authenticated user attempts to add a new e-bike.
+     * @principle Implements a "Public Read, Admin Write" pattern for system assets.
+     */
+    match /ebikes/{ebikeId} {
+      allow get, list: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    /**
+     * @description Stores information about e-bike stations. This data is public for all
+     *              users to view, but can only be managed by administrators.
+     * @path /stations/{stationId}
+     * @allow (get) Any user, signed in or not, can fetch details for a specific station.
+     * @deny (update) A regular authenticated user attempts to change a station's name.
+     * @principle Implements a "Public Read, Admin Write" pattern for system assets.
+     */
+    match /stations/{stationId} {
+      allow get, list: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    /**
+     * @description Stores information about parking bays. This data is public for all
+     *              users to view, but can only be managed by administrators.
+     * @path /parking_bays/{parkingBayId}
+     * @allow (get) Any user, signed in or not, can fetch details for a parking bay.
+     * @deny (delete) A regular authenticated user attempts to delete a parking bay.
+     * @principle Implements a "Public Read, Admin Write" pattern for system assets.
+     */
+    match /parking_bays/{parkingBayId} {
+      allow get, list: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    /**
+     * @description Stores rental session records. Users can create rentals for themselves and
+     *              view their own rental history. Admins can view all rentals and manage them.
+     * @path /rentals/{rentalId}
+     * @allow (create) An authenticated user starts a new rental session. (auth.uid: 'user_xyz', request.resource.data.userId: 'user_xyz')
+     * @deny (get) A user tries to read another user's rental document.
+     * @principle Enforces document ownership via an internal `userId` field, not the document path.
+     */
+    match /rentals/{rentalId} {
+      allow get: if (isExistingDoc() && isOwner(resource.data.userId)) || isAdmin();
+      allow list: if false;
+      allow create: if isCreatingOwnDocument('userId');
+      allow update: if (isExistingDoc() && isOwner(resource.data.userId) && isOwnerFieldImmutable('userId')) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    /**
+     * @description Stores payment transactions linked to rentals. A user can only access
+     *              payments related to their own rentals. Admins can manage all payments.
+     * @path /payments/{paymentId}
+     * @allow (create) User 'user_xyz' creates a payment for a rental they own.
+     * @deny (get) User 'user_abc' tries to read a payment document linked to a rental owned by 'user_xyz'.
+     * @principle Secures a related document by performing a `get` on its parent to verify ownership.
+     */
+    match /payments/{paymentId} {
+      allow get: if (isSignedIn() && isExistingDoc() && isRentalOwner(resource.data.rentalId)) || isAdmin();
+      allow list: if false;
+      allow create: if isSignedIn() && isRentalOwner(request.resource.data.rentalId);
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    /**
+     * @description Stores system logs. These logs are sensitive and should only be
+     *              accessible to administrators. Client-side writes are disabled entirely.
+     * @path /system_logs/{logId}
+     * @allow (get) An admin user reads a specific log entry.
+     * @deny (list) A regular user attempts to list system logs.
+     * @principle Enforces strict Role-Based Access Control for sensitive system data.
+     */
+    match /system_logs/{logId} {
+      allow get, list: if isAdmin();
+      allow create, update, delete: if false;
+    }
+
+    /**
+     * @description Manages administrator roles. The existence of a document in this
+     *              collection grants a user admin privileges across the app.
+     * @path /roles_admin/{userId}
+     * @allow (create) An existing admin grants admin rights to another user.
+     * @deny (get) A non-admin user attempts to read this collection to discover who the admins are.
+     * @principle Secures a critical collection by restricting all access to existing administrators.
+     */
+    match /roles_admin/{userId} {
+      allow get, list: if false;
+      allow create, update, delete: if isAdmin();
+    }
+  }
+}
