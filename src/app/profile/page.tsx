@@ -14,6 +14,7 @@ import { Terminal } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { UserProfile } from "@/lib/data";
 import { updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
+import { Copy } from "lucide-react";
 
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser();
@@ -81,6 +82,16 @@ export default function ProfilePage() {
     }
   };
 
+  const handleCopyToClipboard = () => {
+    if (user) {
+      navigator.clipboard.writeText(user.uid);
+      toast({
+        title: "Copied to Clipboard",
+        description: "Your User ID has been copied.",
+      });
+    }
+  }
+
   if (isUserLoading || profileLoading) {
     return <div className="flex items-center justify-center h-screen"><Spinner /></div>;
   }
@@ -90,7 +101,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="container mx-auto py-12">
+    <div className="container mx-auto py-12 space-y-8">
         <Card className="max-w-2xl mx-auto">
             <CardHeader>
                 <CardTitle>Profile</CardTitle>
@@ -127,6 +138,28 @@ export default function ProfilePage() {
                     <Button type="submit" disabled={loading}>{loading ? <Spinner /> : 'Update Profile'}</Button>
                 </CardContent>
             </form>
+        </Card>
+
+        <Card className="max-w-2xl mx-auto">
+            <CardHeader>
+                <CardTitle>Developer Information</CardTitle>
+                <CardDescription>Use this information for debugging and admin setup.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="space-y-2">
+                    <Label htmlFor="userId">Your User ID (UID)</Label>
+                    <div className="flex items-center gap-2">
+                         <Input id="userId" value={user.uid} readOnly />
+                         <Button variant="outline" size="icon" onClick={handleCopyToClipboard}>
+                            <Copy className="h-4 w-4" />
+                            <span className="sr-only">Copy User ID</span>
+                         </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                        This is your unique identifier in the system. To make this user an admin, add this ID as a document in the 'roles_admin' collection in Firestore.
+                    </p>
+                </div>
+            </CardContent>
         </Card>
     </div>
   );
